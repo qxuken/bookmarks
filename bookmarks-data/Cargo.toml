@@ -1,0 +1,11 @@
+[package]
+name = "bookmarks-data"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tracing.workspace = true
+fuzzy-matcher = "0.3.7"
+itertools = "0.14.0"
+serde = { version = "1.0.219", features = ["derive"] }
+toml = { version = "0.8.23", features = ["preserve_order"] }

@@ -1,0 +1,9 @@
+[workspace]
+resolver = "3"
+members = ["bookmarks-cli", "bookmarks-data", "bookmarks-sync"]
+
+[workspace.dependencies]
+bookmarks-data = { path = "bookmarks-data" }
+bookmarks-sync = { path = "bookmarks-sync" }
+tracing = "0.1.41"
+mimalloc = { version = "0.1.47", features = ["secure"] }
