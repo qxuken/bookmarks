@@ -1,21 +1,17 @@
 use crossterm::event::KeyEventKind;
-use crossterm::event::{Event, EventStream, KeyCode, KeyModifiers};
+use crossterm::event::{Event, EventStream};
 use futures::{FutureExt, StreamExt};
 use tokio::{sync::mpsc::UnboundedSender, task::JoinHandle};
 
+use crate::tui::event::AppEvent;
+
 #[derive(Debug)]
 pub(super) struct TerminalPoller {
-    tx: UnboundedSender<TerminalEvent>,
+    tx: UnboundedSender<AppEvent>,
     poller: Option<JoinHandle<color_eyre::Result<()>>>,
 }
 
-#[derive(Debug)]
-pub(super) enum TerminalEvent {
-    Key(KeyCode, KeyModifiers),
-    Render,
-}
-
-impl TerminalEvent {
+impl AppEvent {
     fn from_crossterm(event: Event) -> Option<Self> {
         match event {
             Event::Key(key) if matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat) => {
@@ -28,7 +24,7 @@ impl TerminalEvent {
 }
 
 impl TerminalPoller {
-    pub(super) fn new(tx: UnboundedSender<TerminalEvent>) -> Self {
+    pub(super) fn new(tx: UnboundedSender<AppEvent>) -> Self {
         Self { tx, poller: None }
     }
 
@@ -41,7 +37,7 @@ impl TerminalPoller {
                 .fuse()
                 .await
                 .and_then(|e| e.ok())
-                .and_then(TerminalEvent::from_crossterm)
+                .and_then(AppEvent::from_crossterm)
             {
                 tx.send(evt)?;
             }

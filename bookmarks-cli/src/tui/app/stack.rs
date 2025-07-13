@@ -2,11 +2,9 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
-    style::Stylize,
-    widgets::{Paragraph, Widget},
 };
 
-use crate::tui::{app::state::AppState, terminal_events::TerminalEvent};
+use crate::tui::{app::state::AppState, event::AppEvent};
 
 type Item = Box<dyn AppStackItem>;
 
@@ -23,30 +21,26 @@ pub struct AppStack {
 }
 
 pub trait AppStackItem {
-    fn handle_terminal_event(
-        &mut self,
-        state: &mut AppState,
-        event: &TerminalEvent,
-    ) -> HandleResult;
-    fn help(&self, state: &AppState) -> String;
+    fn handle_app_event(&mut self, state: &mut AppState, event: &AppEvent) -> HandleResult;
+    fn render_statusline(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState);
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState);
 }
 
 impl AppStack {
-    pub fn handle_terminal_event(&mut self, state: &mut AppState, event: TerminalEvent) {
+    pub fn handle_app_event(&mut self, state: &mut AppState, event: AppEvent) {
         let Some(cur) = self.stack.last_mut() else {
             return;
         };
-        match cur.handle_terminal_event(state, &event) {
+        match cur.handle_app_event(state, &event) {
             HandleResult::Handled => {}
             HandleResult::PushStack(it) => {
                 self.push(it);
             }
             HandleResult::NotHandled => match event {
-                TerminalEvent::Key(KeyCode::Char('q'), KeyModifiers::CONTROL) => {
+                AppEvent::Key(KeyCode::Char('q'), KeyModifiers::CONTROL) => {
                     self.should_quit = true;
                 }
-                TerminalEvent::Key(KeyCode::Char('q'), _) => {
+                AppEvent::Key(KeyCode::Char('q'), _) => {
                     if self.stack.len() > 1 {
                         self.stack.pop();
                     } else {
@@ -68,12 +62,8 @@ impl AppStack {
         for it in self.stack.iter_mut() {
             it.render(screen[0], buf, state);
         }
-        if let Some(it) = self.stack.last() {
-            Paragraph::new(it.help(state))
-                .dim()
-                .bold()
-                .blue()
-                .render(screen[1], buf);
+        if let Some(it) = self.stack.last_mut() {
+            it.render_statusline(screen[1], buf, state);
         }
     }
 }

@@ -7,24 +7,21 @@ use crate::tui::{
     app::{
         stack::{AppStackItem, HandleResult},
         state::AppState,
+        view::statusline_help,
     },
-    terminal_events::TerminalEvent,
+    event::AppEvent,
 };
 
 #[derive(Debug, Clone)]
 pub struct ErrorView(pub String);
 
 impl AppStackItem for ErrorView {
-    fn handle_terminal_event(
-        &mut self,
-        _state: &mut AppState,
-        _event: &TerminalEvent,
-    ) -> HandleResult {
+    fn handle_app_event(&mut self, _state: &mut AppState, _event: &AppEvent) -> HandleResult {
         HandleResult::NotHandled
     }
 
-    fn help(&self, _state: &AppState) -> String {
-        "Close: q | Quit Application: c-q".to_string()
+    fn render_statusline(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
+        statusline_help("Close: q | Quit Application: c-q", area, buf)
     }
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {

@@ -15,7 +15,8 @@ use crate::tui::{
         view::{error::ErrorView, main::MainView},
     },
     data::{DataEvent, DataWorker},
-    terminal_events::{TerminalEvent, TerminalPoller},
+    event::AppEvent,
+    terminal_events::TerminalPoller,
 };
 
 pub(super) struct App {
@@ -37,9 +38,9 @@ impl Drop for App {
 
 impl App {
     pub async fn run(mut self, data: PathBuf) -> color_eyre::Result<()> {
-        let tick_rate = std::time::Duration::from_secs(1);
+        let tick_rate = std::time::Duration::from_millis(250);
         let mut interval = tokio::time::interval(tick_rate);
-        let (e_tx, mut e_rx) = mpsc::unbounded_channel::<TerminalEvent>();
+        let (e_tx, mut e_rx) = mpsc::unbounded_channel::<AppEvent>();
         let mut terminal_poller = TerminalPoller::new(e_tx);
         terminal_poller.init_poller();
         let (d_tx, mut d_rx) = mpsc::unbounded_channel::<DataEvent>();
@@ -71,12 +72,12 @@ impl App {
                 maybe_event
             }
             _ = interval.tick().fuse() => {
-                None
+                Some(AppEvent::Tick)
             },
             };
 
             if let Some(event) = maybe_event {
-                stack.handle_terminal_event(&mut state, event);
+                stack.handle_app_event(&mut state, event);
             }
 
             self.terminal

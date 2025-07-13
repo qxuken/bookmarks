@@ -4,6 +4,7 @@ use crate::tui::app::App;
 
 mod app;
 mod data;
+mod event;
 mod terminal_events;
 
 #[tokio::main]
