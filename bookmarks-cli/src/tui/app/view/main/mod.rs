@@ -7,8 +7,7 @@ use ratatui::{
 use crate::tui::{
     app::{
         AppState,
-        stack::{AppStackItem, HandleResult},
-        view::{error::ErrorView, statusline_help},
+        view::{EventState, View, error::ErrorView, statusline_help},
     },
     event::AppEvent,
 };
@@ -25,41 +24,41 @@ pub struct MainView {
     loader: loader::Loader,
 }
 
-impl AppStackItem for MainView {
-    fn handle_app_event(&mut self, state: &mut AppState, event: &AppEvent) -> HandleResult {
+impl View for MainView {
+    fn handle_app_event(&mut self, state: &mut AppState, event: &AppEvent) -> EventState {
         match event {
             AppEvent::Key(KeyCode::Char('k'), _) => {
                 self.items_state.select_previous();
-                HandleResult::Handled
+                EventState::Handled
             }
             AppEvent::Key(KeyCode::Char('j'), _) => {
                 self.items_state.select_next();
-                HandleResult::Handled
+                EventState::Handled
             }
             AppEvent::Key(KeyCode::Char('l'), _) => {
                 self.selected_block = self.selected_block.next();
-                HandleResult::Handled
+                EventState::Handled
             }
             AppEvent::Key(KeyCode::Char('h'), _) => {
                 self.selected_block = self.selected_block.prev();
-                HandleResult::Handled
+                EventState::Handled
             }
             AppEvent::Key(KeyCode::Char(' ') | KeyCode::Enter, _) => {
                 self.content_item = self.items_state.selected();
-                HandleResult::Handled
+                EventState::Handled
             }
             AppEvent::Key(KeyCode::Esc, _) => {
                 self.content_item = None;
-                HandleResult::Handled
+                EventState::Handled
             }
             AppEvent::Key(KeyCode::Tab, _) => {
-                HandleResult::PushStack(Box::new(ErrorView("Test error".to_string())))
+                EventState::PushStack(Box::new(ErrorView("Test error".to_string())))
             }
             AppEvent::Tick if !state.items_loaded => {
                 self.loader.next();
-                HandleResult::Handled
+                EventState::Handled
             }
-            _ => HandleResult::NotHandled,
+            _ => EventState::NotHandled,
         }
     }
 

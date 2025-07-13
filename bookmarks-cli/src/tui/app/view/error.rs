@@ -5,9 +5,8 @@ use ratatui::{
 
 use crate::tui::{
     app::{
-        stack::{AppStackItem, HandleResult},
         state::AppState,
-        view::statusline_help,
+        view::{EventState, View, statusline_help},
     },
     event::AppEvent,
 };
@@ -15,9 +14,9 @@ use crate::tui::{
 #[derive(Debug, Clone)]
 pub struct ErrorView(pub String);
 
-impl AppStackItem for ErrorView {
-    fn handle_app_event(&mut self, _state: &mut AppState, _event: &AppEvent) -> HandleResult {
-        HandleResult::NotHandled
+impl View for ErrorView {
+    fn handle_app_event(&mut self, _state: &mut AppState, _event: &AppEvent) -> EventState {
+        EventState::NotHandled
     }
 
     fn render_statusline(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
