@@ -91,16 +91,17 @@ pub fn save_to_fs(bookmark: &BookmarkFile) -> io::Result<()> {
 }
 
 #[tracing::instrument(skip(records), ret(level = Level::DEBUG))]
-pub fn search(
+pub fn search<'a>(
     needle: &str,
-    records: impl IntoIterator<Item = BookmarkRecord>,
-) -> impl Iterator<Item = (BookmarkRecord, i64)> {
+    records: impl IntoIterator<Item = &'a BookmarkRecord>,
+) -> impl Iterator<Item = (usize, i64)> {
     let matcher = SkimMatcherV2::default();
     let mut keys: Vec<_> = records
         .into_iter()
+        .enumerate()
         .filter_map(|r| {
-            let fuzz = r.fuzzy_string();
-            Some(r).zip(matcher.fuzzy_match(&fuzz, needle))
+            let fuzz = r.1.fuzzy_string();
+            Some(r.0).zip(matcher.fuzzy_match(&fuzz, needle))
         })
         .collect();
     keys.sort_unstable_by_key(|r| r.1);

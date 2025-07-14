@@ -64,13 +64,16 @@ fn main() -> color_eyre::Result<()> {
 
     match args.command {
         Some(Command::Find { search, limit }) => {
-            let data = bookmarks_data::load_from_fs(args.data)?;
-            let res = bookmarks_data::search(&search, data.map(|it| it.content));
+            let data = bookmarks_data::load_from_fs(args.data)?
+                .map(|it| it.content)
+                .collect::<Vec<_>>();
+            let res = bookmarks_data::search(&search, data.iter());
             let res = match limit {
                 0 => res.take(usize::MAX),
                 1.. => res.take(limit),
             };
-            for (content, it) in res {
+            for (i, it) in res {
+                let content = &data[i];
                 println!("--- (score {it})");
                 println!("{content:?}");
                 println!("{}", content.fuzzy_string());
