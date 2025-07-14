@@ -1,9 +1,9 @@
 #![feature(never_type)]
+#![feature(if_let_guard)]
 use std::{fs::File, io, path::PathBuf};
 
 use clap::{Parser, Subcommand, command};
 use mimalloc::MiMalloc;
-use tracing_subscriber::fmt::format;
 
 mod tui;
 
@@ -50,7 +50,6 @@ fn main() -> color_eyre::Result<()> {
     let args = Args::parse();
     if matches!(args.command, Some(Command::Tui) | None) {
         tracing_subscriber::fmt()
-            .event_format(format::json())
             .with_max_level(args.verbosity)
             .with_writer(File::create("./log.jsonl")?)
             .init();

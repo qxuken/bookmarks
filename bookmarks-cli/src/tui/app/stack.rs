@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    Frame,
+    layout::{Constraint, Layout},
 };
 
 use crate::tui::{
@@ -48,14 +48,19 @@ impl AppStack {
         self.stack.push(value);
     }
 
-    pub fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState) {
-        let screen = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
+    pub fn render(&mut self, state: &mut AppState, frame: &mut Frame) {
+        let screen =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(frame.area());
 
         for it in self.stack.iter_mut() {
-            it.render(screen[0], buf, state);
+            if let Some(new_cursor_pos) = it.render(screen[0], frame.buffer_mut(), state) {
+                frame.set_cursor_position(new_cursor_pos);
+            }
         }
-        if let Some(it) = self.stack.last_mut() {
-            it.render_statusline(screen[1], buf, state);
+        if let Some(it) = self.stack.last_mut()
+            && let Some(new_cursor_pos) = it.render_statusline(screen[1], frame.buffer_mut(), state)
+        {
+            frame.set_cursor_position(new_cursor_pos);
         }
     }
 }

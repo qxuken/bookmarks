@@ -4,7 +4,7 @@ const START_CHAR: u16 = 0xEE06;
 const END_CHAR: u16 = 0xEE0B;
 const RANGE: u16 = END_CHAR - START_CHAR;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct Loader(u16);
 
 impl Loader {

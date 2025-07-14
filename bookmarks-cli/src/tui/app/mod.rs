@@ -80,8 +80,7 @@ impl App {
                 stack.handle_app_event(&mut state, event);
             }
 
-            self.terminal
-                .draw(|f| stack.render(f.area(), f.buffer_mut(), &mut state))?;
+            self.terminal.draw(|f| stack.render(&mut state, f))?;
         }
 
         Ok(())

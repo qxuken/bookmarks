@@ -7,7 +7,6 @@ use fuzzy_matcher::FuzzyMatcher;
 use fuzzy_matcher::skim::SkimMatcherV2;
 
 use serde::{Deserialize, Serialize};
-use tracing::Level;
 
 mod toml_file_iterator;
 
@@ -90,7 +89,7 @@ pub fn save_to_fs(bookmark: &BookmarkFile) -> io::Result<()> {
     fs::write(&bookmark.path, str_content)
 }
 
-#[tracing::instrument(skip(records), ret(level = Level::DEBUG))]
+#[tracing::instrument(skip(records))]
 pub fn search<'a>(
     needle: &str,
     records: impl IntoIterator<Item = &'a BookmarkRecord>,
@@ -104,6 +103,7 @@ pub fn search<'a>(
             Some(r.0).zip(matcher.fuzzy_match(&fuzz, needle))
         })
         .collect();
+    tracing::trace!("Fuzzied items {:?}", keys);
     keys.sort_unstable_by_key(|r| r.1);
     keys.into_iter().rev()
 }
