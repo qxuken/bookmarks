@@ -1,3 +1,5 @@
 /target
 /example/data
 log.jsonl
+.fslckout
+*.fossil
