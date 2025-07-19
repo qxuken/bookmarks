@@ -9,6 +9,7 @@ pub type ViewBoxed = Box<dyn View>;
 pub enum EventState {
     Handled,
     PushStack(ViewBoxed),
+    PushBlockStack(ViewBoxed),
     NotHandled,
 }
 
@@ -24,7 +25,7 @@ pub trait View {
 }
 
 #[inline]
-fn statusline_help<'a>(text: impl Into<Text<'a>>, area: Rect, buf: &mut Buffer) {
+pub fn statusline_help<'a>(text: impl Into<Text<'a>>, area: Rect, buf: &mut Buffer) {
     text.into()
         .style(Style::new().dim().bold().blue())
         .render(area, buf);

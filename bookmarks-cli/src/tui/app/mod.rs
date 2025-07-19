@@ -62,7 +62,7 @@ impl App {
                             state.items_loaded = true;
                         }
                         DataEvent::LoadError(err) => {
-                            stack.push(Box::new(ErrorView(err.to_string())))
+                            stack.push_block(Box::new(ErrorView(err.to_string())))
                         }
                     }
                 }
