@@ -39,6 +39,7 @@ impl TerminalPoller {
                 .and_then(|e| e.ok())
                 .and_then(AppEvent::from_crossterm)
             {
+                tracing::trace!("{:?}", evt);
                 tx.send(evt)?;
             }
             Ok(())

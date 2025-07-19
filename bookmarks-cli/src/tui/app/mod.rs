@@ -62,7 +62,7 @@ impl App {
                             state.items_loaded = true;
                         }
                         DataEvent::LoadError(err) => {
-                            stack.push(Box::new(ErrorView(err.to_string())))
+                            stack.push_block(Box::new(ErrorView(err.to_string())))
                         }
                     }
                 }
@@ -80,8 +80,7 @@ impl App {
                 stack.handle_app_event(&mut state, event);
             }
 
-            self.terminal
-                .draw(|f| stack.render(f.area(), f.buffer_mut(), &mut state))?;
+            self.terminal.draw(|f| stack.render(&mut state, f))?;
         }
 
         Ok(())

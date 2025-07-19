@@ -19,11 +19,17 @@ impl View for ErrorView {
         EventState::NotHandled
     }
 
-    fn render_statusline(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
-        statusline_help("Close: q | Quit Application: c-q", area, buf)
+    fn render_statusline(
+        &mut self,
+        area: Rect,
+        buf: &mut Buffer,
+        _state: &mut AppState,
+    ) -> Option<Position> {
+        statusline_help("Close: q | Quit Application: c-q", area, buf);
+        None
     }
 
-    fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) {
+    fn render(&mut self, area: Rect, buf: &mut Buffer, _state: &mut AppState) -> Option<Position> {
         let popup_area = Rect {
             x: area.width / 3,
             y: area.height / 4,
@@ -42,5 +48,6 @@ impl View for ErrorView {
                     .border_style(Style::new().red()),
             )
             .render(popup_area, buf);
+        None
     }
 }

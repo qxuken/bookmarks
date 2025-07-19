@@ -3,7 +3,35 @@ resolver = "3"
 members = ["bookmarks-cli", "bookmarks-data", "bookmarks-sync"]
 
 [workspace.dependencies]
+# Bookmarks
 bookmarks-data = { path = "bookmarks-data" }
 bookmarks-sync = { path = "bookmarks-sync" }
+
+# Tracing
 tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["json"] }
+
+# TUI
+crossterm = { version = "0.29.0", features = ["event-stream"] }
+ratatui = { version = "0.29.0", features = ["unstable-widget-ref"] }
+
+# CLI
+clap = { version = "4.5.40", features = ["derive"] }
+clap-verbosity-flag = { version = "3.0.3", default-features = false, features = [
+	"tracing",
+] }
+
+# Async
+tokio = { version = "1.46.1", features = ["full"] }
+futures = "0.3.31"
+
+# Misc
+color-eyre = "0.6.5"
 mimalloc = { version = "0.1.47", features = ["secure"] }
+itertools = "0.14.0"
+strum = { version = "0.27", features = ["derive"] }
+fuzzy-matcher = "0.3.7"
+
+# Serde
+serde = { version = "1.0.219", features = ["derive"] }
+toml = { version = "0.9.2", features = ["preserve_order"] }

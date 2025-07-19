@@ -1,9 +1,9 @@
 #![feature(never_type)]
+#![feature(if_let_guard)]
 use std::{fs::File, io, path::PathBuf};
 
 use clap::{Parser, Subcommand, command};
 use mimalloc::MiMalloc;
-use tracing_subscriber::fmt::format;
 
 mod tui;
 
@@ -50,7 +50,6 @@ fn main() -> color_eyre::Result<()> {
     let args = Args::parse();
     if matches!(args.command, Some(Command::Tui) | None) {
         tracing_subscriber::fmt()
-            .event_format(format::json())
             .with_max_level(args.verbosity)
             .with_writer(File::create("./log.jsonl")?)
             .init();
@@ -64,13 +63,16 @@ fn main() -> color_eyre::Result<()> {
 
     match args.command {
         Some(Command::Find { search, limit }) => {
-            let data = bookmarks_data::load_from_fs(args.data)?;
-            let res = bookmarks_data::search(&search, data.map(|it| it.content));
+            let data = bookmarks_data::load_from_fs(args.data)?
+                .map(|it| it.content)
+                .collect::<Vec<_>>();
+            let res = bookmarks_data::search(&search, data.iter());
             let res = match limit {
                 0 => res.take(usize::MAX),
                 1.. => res.take(limit),
             };
-            for (content, it) in res {
+            for (i, it) in res {
+                let content = &data[i];
                 println!("--- (score {it})");
                 println!("{content:?}");
                 println!("{}", content.fuzzy_string());

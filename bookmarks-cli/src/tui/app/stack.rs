@@ -1,13 +1,13 @@
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
+    Frame,
+    layout::{Constraint, Layout},
 };
 
 use crate::tui::{
     app::{
         state::AppState,
-        view::{EventState, ViewBoxed},
+        view::{EventState, ViewBoxed, statusline_help},
     },
     event::AppEvent,
 };
@@ -15,18 +15,33 @@ use crate::tui::{
 #[derive(Default)]
 pub struct AppStack {
     pub should_quit: bool,
+    is_blocked: bool,
     stack: Vec<ViewBoxed>,
 }
 
 impl AppStack {
     pub fn handle_app_event(&mut self, state: &mut AppState, event: AppEvent) {
+        if let AppEvent::Tick = event {
+            state.loader.next();
+        }
+        if self.is_blocked {
+            if let AppEvent::Key(KeyCode::Char('q') | KeyCode::Char('Q'), _) = event {
+                self.should_quit = true;
+            }
+            return;
+        };
         let Some(cur) = self.stack.last_mut() else {
             return;
         };
         match cur.handle_app_event(state, &event) {
             EventState::Handled => {}
+            #[cfg(debug_assertions)]
             EventState::PushStack(it) => {
                 self.push(it);
+            }
+            #[cfg(debug_assertions)]
+            EventState::PushBlockStack(it) => {
+                self.push_block(it);
             }
             EventState::NotHandled => match event {
                 AppEvent::Key(KeyCode::Char('q'), KeyModifiers::CONTROL) => {
@@ -48,14 +63,26 @@ impl AppStack {
         self.stack.push(value);
     }
 
-    pub fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState) {
-        let screen = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
+    pub fn push_block(&mut self, value: ViewBoxed) {
+        self.stack.push(value);
+        self.is_blocked = true;
+    }
+
+    pub fn render(&mut self, state: &mut AppState, frame: &mut Frame) {
+        let screen =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(frame.area());
 
         for it in self.stack.iter_mut() {
-            it.render(screen[0], buf, state);
+            if let Some(new_cursor_pos) = it.render(screen[0], frame.buffer_mut(), state) {
+                frame.set_cursor_position(new_cursor_pos);
+            }
         }
-        if let Some(it) = self.stack.last_mut() {
-            it.render_statusline(screen[1], buf, state);
+        if self.is_blocked {
+            statusline_help("Quit: q", screen[1], frame.buffer_mut());
+        } else if let Some(it) = self.stack.last_mut()
+            && let Some(new_cursor_pos) = it.render_statusline(screen[1], frame.buffer_mut(), state)
+        {
+            frame.set_cursor_position(new_cursor_pos);
         }
     }
 }
