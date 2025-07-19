@@ -78,9 +78,7 @@ impl View for MainView {
                     EventState::Handled
                 }
                 AppEvent::Key(KeyCode::Char('/'), _) => {
-                    if self.search.is_none() {
-                        self.search = Some(Default::default());
-                    }
+                    self.search = Some(Default::default());
                     self.selected_block = SelectedBlock::Search;
                     EventState::Handled
                 }
