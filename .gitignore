@@ -3,3 +3,4 @@
 log.jsonl
 .fslckout
 *.fossil
+.mirror_state
