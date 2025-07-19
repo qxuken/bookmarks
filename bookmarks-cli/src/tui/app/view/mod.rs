@@ -3,12 +3,15 @@ use ratatui::prelude::*;
 use crate::tui::{app::state::AppState, event::AppEvent};
 
 pub mod error;
+pub mod loader;
 pub mod main;
 
 pub type ViewBoxed = Box<dyn View>;
 pub enum EventState {
     Handled,
+    #[cfg(debug_assertions)]
     PushStack(ViewBoxed),
+    #[cfg(debug_assertions)]
     PushBlockStack(ViewBoxed),
     NotHandled,
 }

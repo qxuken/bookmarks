@@ -21,6 +21,9 @@ pub struct AppStack {
 
 impl AppStack {
     pub fn handle_app_event(&mut self, state: &mut AppState, event: AppEvent) {
+        if let AppEvent::Tick = event {
+            state.loader.next();
+        }
         if self.is_blocked {
             if let AppEvent::Key(KeyCode::Char('q') | KeyCode::Char('Q'), _) = event {
                 self.should_quit = true;
@@ -32,9 +35,11 @@ impl AppStack {
         };
         match cur.handle_app_event(state, &event) {
             EventState::Handled => {}
+            #[cfg(debug_assertions)]
             EventState::PushStack(it) => {
                 self.push(it);
             }
+            #[cfg(debug_assertions)]
             EventState::PushBlockStack(it) => {
                 self.push_block(it);
             }

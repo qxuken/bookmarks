@@ -6,15 +6,15 @@ use ratatui::{
     widgets::{Block, BorderType, List, ListState, Paragraph},
 };
 
+#[cfg(debug_assertions)]
+use crate::tui::app::view::error::ErrorView;
 use crate::tui::{
     app::{
         AppState,
-        view::{EventState, View, error::ErrorView, main::loader::Loader, statusline_help},
+        view::{EventState, View, statusline_help},
     },
     event::AppEvent,
 };
-
-mod loader;
 
 #[derive(Debug, Default)]
 enum SelectedBlock {
@@ -38,7 +38,6 @@ pub struct MainView {
     selected_block: SelectedBlock,
     items_state: ListState,
     content_item: Option<usize>,
-    loader: Loader,
     search: Option<Search>,
 }
 
@@ -196,12 +195,13 @@ impl View for MainView {
             return event_state;
         }
         match event {
-            AppEvent::Key(KeyCode::Tab, _) => {
+            #[cfg(debug_assertions)]
+            AppEvent::Key(KeyCode::Char('e'), KeyModifiers::ALT) => {
                 EventState::PushStack(Box::new(ErrorView("Test error".to_string())))
             }
-            AppEvent::Tick if !state.items_loaded => {
-                self.loader.next();
-                EventState::Handled
+            #[cfg(debug_assertions)]
+            AppEvent::Key(KeyCode::Char('e'), KeyModifiers::CONTROL) => {
+                EventState::PushBlockStack(Box::new(ErrorView("Test error".to_string())))
             }
             _ => EventState::NotHandled,
         }
@@ -271,7 +271,7 @@ impl View for MainView {
         let mut list_title = vec![Span::raw("Bookmarks")];
         if !state.items_loaded {
             list_title.push(Span::styled(
-                format!(" {} ", self.loader),
+                format!(" {} ", state.loader),
                 Style::new().dim(),
             ));
         }
