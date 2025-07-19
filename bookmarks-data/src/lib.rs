@@ -37,7 +37,7 @@ impl BookmarkRecord {
             parts.push(description);
         }
 
-        parts.join(" ")
+        parts.join(" ").to_lowercase()
     }
 }
 
@@ -94,13 +94,14 @@ pub fn search<'a>(
     needle: &str,
     records: impl IntoIterator<Item = &'a BookmarkRecord>,
 ) -> impl Iterator<Item = (usize, i64)> {
+    let needle = needle.to_lowercase();
     let matcher = SkimMatcherV2::default();
     let mut keys: Vec<_> = records
         .into_iter()
         .enumerate()
         .filter_map(|r| {
             let fuzz = r.1.fuzzy_string();
-            Some(r.0).zip(matcher.fuzzy_match(&fuzz, needle))
+            Some(r.0).zip(matcher.fuzzy_match(&fuzz, &needle))
         })
         .collect();
     tracing::trace!("Fuzzied items {:?}", keys);

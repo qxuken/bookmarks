@@ -214,7 +214,12 @@ impl View for MainView {
         let content_area = if !matches!(self.selected_block, SelectedBlock::Search)
             && let Some(search) = self.search.as_ref()
         {
-            let hint = format!("Search: {:?} Next: n | Prev: N", search.value);
+            let hint = format!(
+                "[{}/{}] {:?} Next: n | Prev: N",
+                search.latest_focused + 1,
+                search.items.len(),
+                search.value
+            );
             let layout = Layout::horizontal([
                 Constraint::Fill(1),
                 Constraint::Length(1),
@@ -285,21 +290,25 @@ impl View for MainView {
             .iter()
             .enumerate()
             .map(|(i, it)| {
+                let mut text = Text::default();
                 let mut title_line = Line::default();
                 if let Some(title) = it.content.title.as_ref() {
                     title_line.push_span(title);
                 }
-                if let Some(search) = self.search.as_ref()
-                    && let Some(local_i) = search.item_ids.get(&i)
-                    && let Some((_, score)) = search.items.get(*local_i)
-                {
-                    title_line.push_span(" ");
-                    title_line
-                        .push_span(format!("[{}/{}]", local_i + 1, search.item_ids.len()).blue());
-                    title_line.push_span(" ");
-                    title_line.push_span(format!("[score: {score}]").blue());
+                if let Some(search) = self.search.as_ref() {
+                    if let Some(local_i) = search.item_ids.get(&i)
+                        && let Some((_, score)) = search.items.get(*local_i)
+                    {
+                        title_line.push_span(" ");
+                        title_line.push_span(
+                            format!("[{}/{}]", local_i + 1, search.item_ids.len()).blue(),
+                        );
+                        title_line.push_span(" ");
+                        title_line.push_span(format!("[score: {score}]").blue());
+                    } else {
+                        text = text.dim();
+                    }
                 };
-                let mut text = Text::default();
                 text.push_line(title_line);
                 text.push_line(
                     Span::styled(&it.content.url, Style::new().dim()).into_left_aligned_line(),
