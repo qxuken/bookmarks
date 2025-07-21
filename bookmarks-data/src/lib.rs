@@ -41,7 +41,7 @@ impl BookmarkRecord {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BookmarkFile {
     pub content: BookmarkRecord,
     pub path: PathBuf,
@@ -52,13 +52,13 @@ pub fn load_from_fs<P>(path: P) -> io::Result<impl Iterator<Item = BookmarkFile>
 where
     P: AsRef<Path> + fmt::Debug,
 {
-    let toml_path_iterator = toml_file_iterator::TomlFileIterator::new(path)?;
+    let toml_path_iterator = toml_file_iterator::TomlFileIterator::new(&path)?;
     let files = toml_path_iterator.filter_map(|path_result| match path_result {
-        Ok(path) => {
-            let file = match fs::read_to_string(&path) {
+        Ok(file_path) => {
+            let file = match fs::read_to_string(&file_path) {
                 Ok(file) => file,
                 Err(e) => {
-                    tracing::warn!("Failed to read {path:?}. {e}");
+                    tracing::warn!("Failed to read {file_path:?}. {e}");
                     return None;
                 }
             };
@@ -66,13 +66,16 @@ where
             let content = match toml::from_str(&file) {
                 Ok(content) => content,
                 Err(e) => {
-                    tracing::warn!("Failed to parse {path:?}. {e}");
+                    tracing::warn!("Failed to parse {file_path:?}. {e}");
                     return None;
                 }
             };
 
-            tracing::trace!("Processed {path:?}. {content:?}");
-            Some(BookmarkFile { path, content })
+            tracing::trace!("Processed {file_path:?}. {content:?}");
+            Some(BookmarkFile {
+                path: file_path,
+                content,
+            })
         }
         Err(e) => {
             tracing::warn!("Failed {e}");
