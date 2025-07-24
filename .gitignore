@@ -1,6 +1,11 @@
-/target
-/example/data
-log.jsonl
 .fslckout
+_FOSSIL_
 *.fossil
 .mirror_state
+
+/target
+log.jsonl
+
+/sample-data/*
+
+!.keep
