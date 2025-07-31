@@ -40,7 +40,9 @@ impl Iterator for TomlFileIterator {
                         && let Some(ext) = path.extension()
                         && ext == "toml"
                     {
-                        return Some(Ok(path.strip_prefix(&self.root).map(|p| p.to_path_buf())));
+                        let relative_path = path.strip_prefix(&self.root).map(|p| p.to_path_buf());
+                        tracing::info!("relative_path: {relative_path:?}");
+                        return Some(Ok(path));
                     }
                 }
                 Some(Err(e)) => {
