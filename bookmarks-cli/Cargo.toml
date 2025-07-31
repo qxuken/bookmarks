@@ -16,3 +16,4 @@ clap-verbosity-flag.workspace = true
 tokio.workspace = true
 futures.workspace = true
 strum.workspace = true
+open.workspace = true

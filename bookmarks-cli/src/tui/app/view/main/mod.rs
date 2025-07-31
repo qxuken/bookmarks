@@ -201,6 +201,14 @@ impl View for MainView {
             AppEvent::Key(KeyCode::Char('e'), KeyModifiers::CONTROL) => {
                 EventState::PushBlockStack(Box::new(ErrorView("Test error".to_string())))
             }
+            // AppEvent::Key(KeyCode::Char('o'), _) => {
+            //     if let Some(selected_index) = self.items_state.selected()
+            //         && let Some(item) = state.items.get(selected_index)
+            //     {
+            //         let _ = open::that(item.content.url.clone());
+            //     }
+            //     EventState::Handled
+            // }
             _ => EventState::NotHandled,
         }
     }
@@ -292,6 +300,16 @@ impl View for MainView {
             .map(|(i, it)| {
                 let mut text = Text::default();
                 let mut title_line = Line::default();
+                for (i, part) in it.content.path.iter().enumerate() {
+                    if i > 0 {
+                        title_line.push_span("/".gray().dim());
+                    }
+                    title_line.push_span(part.clone().gray());
+                }
+                if !it.content.path.is_empty() {
+                    title_line.push_span(" :".gray().dim());
+                    title_line.push_span(" ");
+                }
                 if let Some(title) = it.content.title.as_ref() {
                     title_line.push_span(title);
                 }
@@ -311,7 +329,8 @@ impl View for MainView {
                 };
                 text.push_line(title_line);
                 text.push_line(
-                    Span::styled(&it.content.url, Style::new().dim()).into_left_aligned_line(),
+                    Span::styled(&it.content.url, Style::new().fg(Color::DarkGray))
+                        .into_left_aligned_line(),
                 );
                 text
             })

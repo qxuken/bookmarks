@@ -4,20 +4,29 @@ use std::path::{Path, PathBuf};
 
 /// An iterator that recursively finds all TOML files in a directory tree.
 pub struct TomlFileIterator {
+    root: PathBuf,
     work_stack: Vec<fs::ReadDir>,
+}
+
+#[derive(Debug)]
+pub struct TomlFileIteratorItem {
+    pub path: PathBuf,
+    pub relative_path: PathBuf,
 }
 
 impl TomlFileIterator {
     pub fn new<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+        let root: PathBuf = path.as_ref().to_path_buf();
         let read_dir = fs::read_dir(path)?;
         Ok(TomlFileIterator {
+            root,
             work_stack: vec![read_dir],
         })
     }
 }
 
 impl Iterator for TomlFileIterator {
-    type Item = io::Result<PathBuf>;
+    type Item = io::Result<TomlFileIteratorItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(current_dir) = self.work_stack.last_mut() {
@@ -37,7 +46,15 @@ impl Iterator for TomlFileIterator {
                         && let Some(ext) = path.extension()
                         && ext == "toml"
                     {
-                        return Some(Ok(path));
+                        let relative_path = path
+                            .strip_prefix(&self.root)
+                            .map(|p| p.to_path_buf())
+                            .unwrap_or(path.clone());
+                        tracing::info!("relative_path: {relative_path:?}");
+                        return Some(Ok(TomlFileIteratorItem {
+                            path,
+                            relative_path,
+                        }));
                     }
                 }
                 Some(Err(e)) => {
