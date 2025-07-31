@@ -8,6 +8,12 @@ pub struct TomlFileIterator {
     work_stack: Vec<fs::ReadDir>,
 }
 
+#[derive(Debug)]
+pub struct TomlFileIteratorItem {
+    pub path: PathBuf,
+    pub relative_path: PathBuf,
+}
+
 impl TomlFileIterator {
     pub fn new<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         let root: PathBuf = path.as_ref().to_path_buf();
@@ -20,7 +26,7 @@ impl TomlFileIterator {
 }
 
 impl Iterator for TomlFileIterator {
-    type Item = io::Result<PathBuf>;
+    type Item = io::Result<TomlFileIteratorItem>;
 
     fn next(&mut self) -> Option<Self::Item> {
         while let Some(current_dir) = self.work_stack.last_mut() {
@@ -40,9 +46,15 @@ impl Iterator for TomlFileIterator {
                         && let Some(ext) = path.extension()
                         && ext == "toml"
                     {
-                        let relative_path = path.strip_prefix(&self.root).map(|p| p.to_path_buf());
+                        let relative_path = path
+                            .strip_prefix(&self.root)
+                            .map(|p| p.to_path_buf())
+                            .unwrap_or(path.clone());
                         tracing::info!("relative_path: {relative_path:?}");
-                        return Some(Ok(path));
+                        return Some(Ok(TomlFileIteratorItem {
+                            path,
+                            relative_path,
+                        }));
                     }
                 }
                 Some(Err(e)) => {

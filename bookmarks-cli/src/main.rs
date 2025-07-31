@@ -35,7 +35,7 @@ enum Command {
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, global = true, default_value = "./example/data")]
+    #[arg(short, long, global = true, default_value = "./sample-data")]
     data: PathBuf,
 
     #[command(subcommand)]
