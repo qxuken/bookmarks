@@ -201,14 +201,14 @@ impl View for MainView {
             AppEvent::Key(KeyCode::Char('e'), KeyModifiers::CONTROL) => {
                 EventState::PushBlockStack(Box::new(ErrorView("Test error".to_string())))
             }
-            // AppEvent::Key(KeyCode::Char('o'), _) => {
-            //     if let Some(selected_index) = self.items_state.selected()
-            //         && let Some(item) = state.items.get(selected_index)
-            //     {
-            //         let _ = open::that(item.content.url.clone());
-            //     }
-            //     EventState::Handled
-            // }
+            AppEvent::Key(KeyCode::Char('o'), _) => {
+                if let Some(selected_index) = self.items_state.selected()
+                    && let Some(item) = state.items.get(selected_index)
+                {
+                    let _ = open::that(item.content.url.clone());
+                }
+                EventState::Handled
+            }
             _ => EventState::NotHandled,
         }
     }
@@ -244,20 +244,24 @@ impl View for MainView {
         match self.selected_block {
             SelectedBlock::List if self.content_item.is_some() => {
                 statusline_help(
-                    "Quit: q | Next: j | Prev: k | Select: return | Focus Select: space | Search: / | Focus Content: l",
+                    "Quit: q | Next: j | Prev: k | Open: o | Select: return | Focus Select: space | Search: / | Focus Content: l",
                     content_area,
                     buf,
                 );
             }
             SelectedBlock::List => {
                 statusline_help(
-                    "Quit: q | Next: j | Prev: k | Select: return | Focus Select: space | Search: /",
+                    "Quit: q | Next: j | Prev: k | Open: o | Select: return | Focus Select: space | Search: /",
                     content_area,
                     buf,
                 );
             }
             SelectedBlock::Content => {
-                statusline_help("Quit: q | Focus List: h | Close: esc", content_area, buf);
+                statusline_help(
+                    "Quit: q | Open: o | Focus List: h | Close: esc",
+                    content_area,
+                    buf,
+                );
             }
             SelectedBlock::Search if let Some(search) = self.search.as_ref() => {
                 Paragraph::new(format!("/{}", search.value)).render(content_area, buf);
