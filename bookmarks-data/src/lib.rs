@@ -29,6 +29,8 @@ impl BookmarkRecord {
             parts.extend(tags.iter().filter(|t| !t.is_empty()).map(|s| s.as_str()));
         }
 
+        parts.extend(self.path.iter().map(|s| s.as_str()));
+
         if let Some(title) = &self.title {
             parts.push(title);
         }
