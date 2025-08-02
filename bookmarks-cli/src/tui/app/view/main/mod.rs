@@ -37,7 +37,7 @@ struct Search {
 pub struct MainView {
     selected_block: SelectedBlock,
     items_state: ListState,
-    content_item: Option<usize>,
+    content_item_index: Option<usize>,
     search: Option<Search>,
 }
 
@@ -64,17 +64,17 @@ impl View for MainView {
                     self.items_state.select_last();
                     EventState::Handled
                 }
-                AppEvent::Key(KeyCode::Char('l'), _) if self.content_item.is_some() => {
+                AppEvent::Key(KeyCode::Char('l'), _) if self.content_item_index.is_some() => {
                     self.selected_block = SelectedBlock::Content;
                     EventState::Handled
                 }
                 AppEvent::Key(KeyCode::Enter, _) => {
-                    self.content_item = self.items_state.selected();
+                    self.content_item_index = self.items_state.selected();
                     EventState::Handled
                 }
                 AppEvent::Key(KeyCode::Char(' '), _) => {
                     self.selected_block = SelectedBlock::Content;
-                    self.content_item = self.items_state.selected();
+                    self.content_item_index = self.items_state.selected();
                     EventState::Handled
                 }
                 AppEvent::Key(KeyCode::Char('/'), _) => {
@@ -111,7 +111,7 @@ impl View for MainView {
                 }
                 AppEvent::Key(KeyCode::Esc, _) => {
                     self.selected_block = SelectedBlock::List;
-                    self.content_item = None;
+                    self.content_item_index = None;
                     EventState::Handled
                 }
                 _ => EventState::NotHandled,
@@ -177,7 +177,7 @@ impl View for MainView {
                     search.latest_focused = 0;
                     if let Some(it) = search.items.first() {
                         self.items_state.select(Some(it.0));
-                        self.content_item = Some(it.0);
+                        self.content_item_index = Some(it.0);
                     }
                     self.selected_block = SelectedBlock::List;
                     EventState::Handled
@@ -242,7 +242,7 @@ impl View for MainView {
         };
 
         match self.selected_block {
-            SelectedBlock::List if self.content_item.is_some() => {
+            SelectedBlock::List if self.content_item_index.is_some() => {
                 statusline_help(
                     "Quit: q | Next: j | Prev: k | Open: o | Select: return | Focus Select: space | Search: / | Focus Content: l",
                     content_area,
@@ -276,12 +276,22 @@ impl View for MainView {
     }
 
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState) -> Option<Position> {
-        let screen = if self.content_item.is_some() {
-            Layout::vertical([Constraint::Min(5), Constraint::Max(20)]).split(area)
-        } else {
-            Layout::vertical([Constraint::Fill(1), Constraint::Length(0)]).split(area)
-        };
         let selected_block_style = Style::new().fg(Color::Yellow);
+
+        let list_area = if let Some(content_item_index) = self.content_item_index
+            && let Some(record_file) = state.items.get(content_item_index)
+        {
+            let screen = Layout::vertical([Constraint::Min(5), Constraint::Max(20)]).split(area);
+            let mut content_style = Block::bordered().border_type(BorderType::Rounded);
+            if matches!(self.selected_block, SelectedBlock::Content) {
+                content_style = content_style.border_style(selected_block_style);
+            }
+            let content = Paragraph::new(format!("{:#?}", record_file)).block(content_style);
+            content.render(screen[1], buf);
+            screen[0]
+        } else {
+            area
+        };
 
         let mut list_title = vec![Span::raw("Bookmarks")];
         if !state.items_loaded {
@@ -341,18 +351,8 @@ impl View for MainView {
             .collect::<List>()
             .block(list_block)
             .highlight_style(Style::new().reversed());
-        StatefulWidget::render(list, screen[0], buf, &mut self.items_state);
+        StatefulWidget::render(list, list_area, buf, &mut self.items_state);
 
-        let mut content_style = Block::bordered().border_type(BorderType::Rounded);
-        if matches!(self.selected_block, SelectedBlock::Content) {
-            content_style = content_style.border_style(selected_block_style);
-        }
-        let content = Paragraph::new(format!(
-            "{:#?}",
-            self.content_item.and_then(|i| state.items.get(i))
-        ))
-        .block(content_style);
-        content.render(screen[1], buf);
         None
     }
 }
