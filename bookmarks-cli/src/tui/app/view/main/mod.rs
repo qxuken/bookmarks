@@ -3,7 +3,11 @@ use std::collections::HashMap;
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
     prelude::*,
-    widgets::{Block, BorderType, List, ListState, Paragraph},
+    symbols::scrollbar,
+    widgets::{
+        Block, BorderType, List, ListState, Paragraph, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, Wrap,
+    },
 };
 
 #[cfg(debug_assertions)]
@@ -34,10 +38,19 @@ struct Search {
 }
 
 #[derive(Debug, Default)]
+struct SelectedContent {
+    item_index: usize,
+    content_height: usize,
+    viewport_height: usize,
+    scroll_state: ScrollbarState,
+    scroll_value: usize,
+}
+
+#[derive(Debug, Default)]
 pub struct MainView {
     selected_block: SelectedBlock,
     items_state: ListState,
-    content_item_index: Option<usize>,
+    selected_content: Option<SelectedContent>,
     search: Option<Search>,
 }
 
@@ -64,17 +77,27 @@ impl View for MainView {
                     self.items_state.select_last();
                     EventState::Handled
                 }
-                AppEvent::Key(KeyCode::Char('l'), _) if self.content_item_index.is_some() => {
+                AppEvent::Key(KeyCode::Char('l'), _) if self.selected_content.is_some() => {
                     self.selected_block = SelectedBlock::Content;
                     EventState::Handled
                 }
-                AppEvent::Key(KeyCode::Enter, _) => {
-                    self.content_item_index = self.items_state.selected();
+                AppEvent::Key(KeyCode::Enter, _)
+                    if let Some(item_index) = self.items_state.selected() =>
+                {
+                    self.selected_content = Some(SelectedContent {
+                        item_index,
+                        ..Default::default()
+                    });
                     EventState::Handled
                 }
-                AppEvent::Key(KeyCode::Char(' '), _) => {
+                AppEvent::Key(KeyCode::Char(' '), _)
+                    if let Some(item_index) = self.items_state.selected() =>
+                {
                     self.selected_block = SelectedBlock::Content;
-                    self.content_item_index = self.items_state.selected();
+                    self.selected_content = Some(SelectedContent {
+                        item_index,
+                        ..Default::default()
+                    });
                     EventState::Handled
                 }
                 AppEvent::Key(KeyCode::Char('/'), _) => {
@@ -109,9 +132,32 @@ impl View for MainView {
                     self.selected_block = SelectedBlock::List;
                     EventState::Handled
                 }
+                AppEvent::Key(KeyCode::Char('j'), _)
+                    if let Some(selected_content) = self.selected_content.as_mut() =>
+                {
+                    selected_content.scroll_value =
+                        selected_content.scroll_value.saturating_add(1).min(
+                            selected_content
+                                .content_height
+                                .saturating_sub(selected_content.viewport_height),
+                        );
+                    selected_content.scroll_state = selected_content
+                        .scroll_state
+                        .position(selected_content.scroll_value);
+                    EventState::Handled
+                }
+                AppEvent::Key(KeyCode::Char('k'), _)
+                    if let Some(selected_content) = self.selected_content.as_mut() =>
+                {
+                    selected_content.scroll_value = selected_content.scroll_value.saturating_sub(1);
+                    selected_content.scroll_state = selected_content
+                        .scroll_state
+                        .position(selected_content.scroll_value);
+                    EventState::Handled
+                }
                 AppEvent::Key(KeyCode::Esc, _) => {
                     self.selected_block = SelectedBlock::List;
-                    self.content_item_index = None;
+                    self.selected_content = None;
                     EventState::Handled
                 }
                 _ => EventState::NotHandled,
@@ -177,7 +223,10 @@ impl View for MainView {
                     search.latest_focused = 0;
                     if let Some(it) = search.items.first() {
                         self.items_state.select(Some(it.0));
-                        self.content_item_index = Some(it.0);
+                        self.selected_content = Some(SelectedContent {
+                            item_index: it.0,
+                            ..Default::default()
+                        });
                     }
                     self.selected_block = SelectedBlock::List;
                     EventState::Handled
@@ -242,7 +291,7 @@ impl View for MainView {
         };
 
         match self.selected_block {
-            SelectedBlock::List if self.content_item_index.is_some() => {
+            SelectedBlock::List if self.selected_content.is_some() => {
                 statusline_help(
                     "Quit: q | Next: j | Prev: k | Open: o | Select: return | Focus Select: space | Search: / | Focus Content: l",
                     content_area,
@@ -258,7 +307,7 @@ impl View for MainView {
             }
             SelectedBlock::Content => {
                 statusline_help(
-                    "Quit: q | Open: o | Focus List: h | Close: esc",
+                    "Quit: q | Open: o | Focus List: h | Up: k | Down: j | Close: esc",
                     content_area,
                     buf,
                 );
@@ -278,16 +327,76 @@ impl View for MainView {
     fn render(&mut self, area: Rect, buf: &mut Buffer, state: &mut AppState) -> Option<Position> {
         let selected_block_style = Style::new().fg(Color::Yellow);
 
-        let list_area = if let Some(content_item_index) = self.content_item_index
-            && let Some(record_file) = state.items.get(content_item_index)
+        let list_area = if let Some(selected_content) = self.selected_content.as_mut()
+            && let Some(record_file) = state.items.get(selected_content.item_index)
         {
-            let screen = Layout::vertical([Constraint::Min(5), Constraint::Max(20)]).split(area);
+            let screen = Layout::vertical([Constraint::Min(6), Constraint::Max(15)]).split(area);
+
             let mut content_style = Block::bordered().border_type(BorderType::Rounded);
             if matches!(self.selected_block, SelectedBlock::Content) {
                 content_style = content_style.border_style(selected_block_style);
             }
-            let content = Paragraph::new(format!("{:#?}", record_file)).block(content_style);
-            content.render(screen[1], buf);
+
+            if let Some(title) = record_file.content.title.as_ref() {
+                content_style =
+                    content_style.title(Line::from(title.clone().bold()).left_aligned());
+            }
+            if let Some(relative_path) = record_file.relative_path.to_str() {
+                content_style =
+                    content_style.title(Line::from(relative_path.dim().gray()).right_aligned());
+            }
+
+            let mut text = Text::default();
+            text.push_line(Line::from(
+                record_file.content.url.clone().blue().underlined(),
+            ));
+
+            if let Some(tags) = &record_file.content.tags {
+                let mut line = Line::from("Tags:");
+                for tag in tags {
+                    line.push_span(" ");
+                    line.push_span(" ".on_dark_gray());
+                    line.push_span(tag.clone().dark_gray().reversed());
+                    line.push_span(" ".on_dark_gray());
+                }
+                text.push_line(line);
+            }
+
+            if let Some(description) = &record_file.content.description {
+                for line in description.lines() {
+                    text.push_line(line);
+                }
+            }
+
+            let content = Paragraph::new(text)
+                .block(content_style)
+                .wrap(Wrap { trim: true });
+
+            selected_content.viewport_height = screen[1].height as usize;
+            selected_content.content_height = content.line_count(screen[1].width);
+            selected_content.scroll_state = selected_content.scroll_state.content_length(
+                selected_content
+                    .content_height
+                    .saturating_sub(selected_content.viewport_height),
+            );
+
+            content
+                .scroll((selected_content.scroll_value as u16, 0))
+                .render(screen[1], buf);
+
+            Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .symbols(scrollbar::VERTICAL)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .render(
+                    screen[1].inner(Margin {
+                        horizontal: 0,
+                        vertical: 1,
+                    }),
+                    buf,
+                    &mut selected_content.scroll_state,
+                );
+
             screen[0]
         } else {
             area
