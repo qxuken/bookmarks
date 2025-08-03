@@ -155,6 +155,26 @@ impl View for MainView {
                         .position(selected_content.scroll_value);
                     EventState::Handled
                 }
+                AppEvent::Key(KeyCode::Char('g'), _)
+                    if let Some(selected_content) = self.selected_content.as_mut() =>
+                {
+                    selected_content.scroll_value = 0;
+                    selected_content.scroll_state = selected_content
+                        .scroll_state
+                        .position(selected_content.scroll_value);
+                    EventState::Handled
+                }
+                AppEvent::Key(KeyCode::Char('G'), _)
+                    if let Some(selected_content) = self.selected_content.as_mut() =>
+                {
+                    selected_content.scroll_value = selected_content
+                        .content_height
+                        .saturating_sub(selected_content.viewport_height);
+                    selected_content.scroll_state = selected_content
+                        .scroll_state
+                        .position(selected_content.scroll_value);
+                    EventState::Handled
+                }
                 AppEvent::Key(KeyCode::Esc, _) => {
                     self.selected_block = SelectedBlock::List;
                     self.selected_content = None;
