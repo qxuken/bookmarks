@@ -14,8 +14,7 @@ use ratatui::{
     },
 };
 
-#[cfg(debug_assertions)]
-use crate::tui::app::view::error::ErrorView;
+use crate::tui::app::view::{edit::EditView, error::ErrorView};
 use crate::tui::{
     app::{
         AppState,
@@ -266,14 +265,6 @@ impl View for MainView {
             return event_state;
         }
         match event {
-            #[cfg(debug_assertions)]
-            AppEvent::Key(KeyCode::Char('e'), KeyModifiers::ALT) => {
-                EventState::PushStack(Box::new(ErrorView("Test error".to_string())))
-            }
-            #[cfg(debug_assertions)]
-            AppEvent::Key(KeyCode::Char('e'), KeyModifiers::CONTROL) => {
-                EventState::PushBlockStack(Box::new(ErrorView("Test error".to_string())))
-            }
             AppEvent::Key(KeyCode::Char('o'), _) => {
                 if let Some(selected_index) = self.items_state.selected()
                     && let Some(item) = state.items.get(selected_index)
@@ -296,6 +287,12 @@ impl View for MainView {
                 } else {
                     EventState::NotHandled
                 }
+            }
+            AppEvent::Key(KeyCode::Char('e'), _)
+                if let Some(selected_index) = self.items_state.selected()
+                    && selected_index < state.items.len() =>
+            {
+                EventState::PushStack(Box::new(EditView(Some(selected_index))))
             }
             _ => EventState::NotHandled,
         }
