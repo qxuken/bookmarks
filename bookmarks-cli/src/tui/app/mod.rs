@@ -19,7 +19,7 @@ use crate::tui::{
     terminal_events::TerminalPoller,
 };
 
-pub(super) struct App {
+pub struct App {
     terminal: DefaultTerminal,
 }
 

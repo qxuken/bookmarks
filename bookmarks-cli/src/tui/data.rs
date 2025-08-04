@@ -4,24 +4,24 @@ use bookmarks_data::BookmarkFile;
 use tokio::{sync::mpsc::UnboundedSender, task::JoinHandle};
 
 #[derive(Debug)]
-pub(super) struct DataWorker {
+pub struct DataWorker {
     tx: UnboundedSender<DataEvent>,
     loader: Option<JoinHandle<color_eyre::Result<()>>>,
 }
 
 #[derive(Debug)]
-pub(super) enum DataEvent {
+pub enum DataEvent {
     NewFile(BookmarkFile),
     Loaded,
     LoadError(io::Error),
 }
 
 impl DataWorker {
-    pub(super) fn new(tx: UnboundedSender<DataEvent>) -> Self {
+    pub fn new(tx: UnboundedSender<DataEvent>) -> Self {
         Self { tx, loader: None }
     }
 
-    pub(super) fn load_items(&mut self, data: PathBuf) {
+    pub fn load_items(&mut self, data: PathBuf) {
         let tx = self.tx.clone();
 
         let handle = tokio::spawn(async move {

@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crossterm::event::{KeyCode, KeyModifiers};
+use crossterm::{
+    clipboard::CopyToClipboard,
+    event::{KeyCode, KeyModifiers},
+    execute,
+};
 use ratatui::{
     prelude::*,
     symbols::scrollbar,
@@ -278,6 +282,21 @@ impl View for MainView {
                 }
                 EventState::Handled
             }
+            AppEvent::Key(KeyCode::Char('y'), _) => {
+                if let Some(selected_index) = self.items_state.selected()
+                    && let Some(item) = state.items.get(selected_index)
+                {
+                    match execute!(
+                        std::io::stdout(),
+                        CopyToClipboard::to_clipboard_from(&item.content.url)
+                    ) {
+                        Ok(_) => EventState::Handled,
+                        Err(e) => EventState::PushBlockStack(Box::new(ErrorView(e.to_string()))),
+                    }
+                } else {
+                    EventState::NotHandled
+                }
+            }
             _ => EventState::NotHandled,
         }
     }
@@ -313,21 +332,21 @@ impl View for MainView {
         match self.selected_block {
             SelectedBlock::List if self.selected_content.is_some() => {
                 statusline_help(
-                    "Quit: q | Next: j | Prev: k | Open: o | Select: return | Focus Select: space | Search: / | Focus Content: l",
+                    "Quit: q | Next: j | Prev: k | Open: o | Copy url: y | Select: return | Focus Select: space | Search: / | Focus Content: l",
                     content_area,
                     buf,
                 );
             }
             SelectedBlock::List => {
                 statusline_help(
-                    "Quit: q | Next: j | Prev: k | Open: o | Select: return | Focus Select: space | Search: /",
+                    "Quit: q | Next: j | Prev: k | Open: o | Copy url: y | Select: return | Focus Select: space | Search: /",
                     content_area,
                     buf,
                 );
             }
             SelectedBlock::Content => {
                 statusline_help(
-                    "Quit: q | Open: o | Focus List: h | Up: k | Down: j | Close: esc",
+                    "Quit: q | Open: o | Copy url: y | Focus List: h | Up: k | Down: j | Close: esc",
                     content_area,
                     buf,
                 );

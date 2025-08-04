@@ -12,7 +12,11 @@ tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["json"] }
 
 # TUI
-crossterm = { version = "0.29.0", features = ["event-stream"] }
+crossterm = { version = "0.29.0", features = [
+	"osc52",
+	"events",
+	"event-stream",
+] }
 ratatui = { version = "0.29.0", features = [
 	"unstable-widget-ref",
 	"crossterm",

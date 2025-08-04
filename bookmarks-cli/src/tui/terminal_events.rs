@@ -6,7 +6,7 @@ use tokio::{sync::mpsc::UnboundedSender, task::JoinHandle};
 use crate::tui::event::AppEvent;
 
 #[derive(Debug)]
-pub(super) struct TerminalPoller {
+pub struct TerminalPoller {
     tx: UnboundedSender<AppEvent>,
     poller: Option<JoinHandle<color_eyre::Result<()>>>,
 }
@@ -24,11 +24,11 @@ impl AppEvent {
 }
 
 impl TerminalPoller {
-    pub(super) fn new(tx: UnboundedSender<AppEvent>) -> Self {
+    pub fn new(tx: UnboundedSender<AppEvent>) -> Self {
         Self { tx, poller: None }
     }
 
-    pub(super) fn init_poller(&mut self) {
+    pub fn init_poller(&mut self) {
         let tx = self.tx.clone();
         let handle = tokio::spawn(async move {
             let mut reader = EventStream::new();
