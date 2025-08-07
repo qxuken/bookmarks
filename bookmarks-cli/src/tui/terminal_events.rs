@@ -1,5 +1,4 @@
-use crossterm::event::KeyEventKind;
-use crossterm::event::{Event, EventStream};
+use crossterm::event::{Event, EventStream, KeyEventKind};
 use futures::{FutureExt, StreamExt};
 use tokio::{sync::mpsc::UnboundedSender, task::JoinHandle};
 

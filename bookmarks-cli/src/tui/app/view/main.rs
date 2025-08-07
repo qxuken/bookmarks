@@ -292,7 +292,7 @@ impl View for MainView {
                 if let Some(selected_index) = self.items_state.selected()
                     && selected_index < state.items.len() =>
             {
-                EventState::PushStack(Box::new(EditView(Some(selected_index))))
+                EventState::PushStack(Box::new(EditView::new(Some(selected_index))))
             }
             _ => EventState::NotHandled,
         }
